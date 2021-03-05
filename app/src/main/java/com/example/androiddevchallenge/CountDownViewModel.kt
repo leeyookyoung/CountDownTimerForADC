@@ -29,6 +29,16 @@ class CountDownViewModel : ViewModel() {
     var countDownMin by mutableStateOf(0)
     var countDownSec by mutableStateOf(0)
 
+    fun numberCheck(min: String, sec: String): Boolean {
+        try {
+            min.toInt()
+            sec.toInt()
+            return true
+        } catch (e: NumberFormatException) {
+            return false
+        }
+    }
+
     fun validateNumCheck(min: String, sec: String) {
         if (numberCheck(min, sec)) {
             buttonExpanded = true
@@ -60,7 +70,6 @@ class CountDownViewModel : ViewModel() {
 
                 countDownSec--
             }
-
             override fun onFinish() {
                 countDownStarted = false
             }

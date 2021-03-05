@@ -187,16 +187,6 @@ fun getCurrentCountDownSec(min: Int, sec: Int): String {
     return cStr
 }
 
-fun numberCheck(min: String, sec: String): Boolean {
-    try {
-        min.toInt()
-        sec.toInt()
-        return true
-    } catch (e: NumberFormatException) {
-        return false
-    }
-}
-
 @Preview("Light Theme", widthDp = 360, heightDp = 640)
 @Composable
 fun LightPreview() {
