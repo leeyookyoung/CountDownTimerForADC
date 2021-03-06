@@ -21,12 +21,16 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
@@ -38,12 +42,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.androiddevchallenge.ui.theme.MyTheme
+import com.example.androiddevchallenge.ui.theme.red300
+import kotlin.math.cos
+import kotlin.math.sin
 
 class MainActivity : AppCompatActivity() {
 
@@ -68,6 +81,7 @@ fun MyApp(countDownViewModel: CountDownViewModel) {
         countDownStarted = countDownViewModel.countDownStarted,
         buttonExpanded = countDownViewModel.buttonExpanded,
         wrongNumberExpanded = countDownViewModel.wrongNumberExpanded,
+        setWrongNumber = countDownViewModel::setWrongNumber,
         validationCheck = countDownViewModel::validateNumCheck,
         onMinuteAndSecChanged = countDownViewModel::onMinuteAndSecChanged,
         startCountDown = countDownViewModel::startCountDown,
@@ -83,6 +97,7 @@ fun CountDownScreen(
     countDownStarted: Boolean,
     buttonExpanded: Boolean,
     wrongNumberExpanded: Boolean,
+    setWrongNumber: () -> Unit,
     validationCheck: (String, String) -> Unit,
     onMinuteAndSecChanged: (Int, Int) -> Unit,
     startCountDown: () -> Unit,
@@ -91,6 +106,13 @@ fun CountDownScreen(
 ) {
     var countDownMinStr = remember { mutableStateOf("0") }
     var countDownSecStr = remember { mutableStateOf("0") }
+    fun check(str1: String, str2: String) {
+        if (!str1.isEmpty()) {
+            validationCheck(str1, str2)
+        } else {
+            setWrongNumber()
+        }
+    }
     Surface(color = MaterialTheme.colors.background) {
         Column(
             modifier = Modifier
@@ -109,9 +131,7 @@ fun CountDownScreen(
                         value = countDownMinStr.value,
                         onValueChange = {
                             countDownMinStr.value = it
-                            if (!it.isEmpty()) {
-                                validationCheck(it, countDownSecStr.value)
-                            }
+                            check(it, countDownSecStr.value)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("Input Minutes") },
@@ -119,13 +139,12 @@ fun CountDownScreen(
                         maxLines = 1,
                         modifier = Modifier.weight(0.5f)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
                     OutlinedTextField(
                         value = countDownSecStr.value,
                         onValueChange = {
                             countDownSecStr.value = it
-                            if (!it.isEmpty()) {
-                                validationCheck(countDownMinStr.value, it)
-                            }
+                            check(countDownMinStr.value, it)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         label = { Text("Input Seconds") },
@@ -156,26 +175,112 @@ fun CountDownScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(200.dp))
-            AnimatedVisibility(countDownStarted) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+            AnimatedVisibility(wrongNumberExpanded) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "${getCurrentCountDownSec(countDownMin, countDownSec)}",
-                        fontSize = 32.sp,
+                        text = "Wrong Minute or Second\nPlease input 60 below and only numbers",
+                        color = Color.Red,
+                        fontSize = 16.sp,
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(50.dp))
 
-            AnimatedVisibility(wrongNumberExpanded) {
-                Text(
-                    text = "Wrong Minute or Second numbers",
-                    color = Color.Red,
-                    fontSize = 16.sp,
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CounterClockCanvas(getCurrentCountDownSec(countDownMin, countDownSec), countDownMin, countDownSec)
+//                    Text(
+//                        text = "${getCurrentCountDownSec(countDownMin, countDownSec)}",
+//                        fontSize = 32.sp,
+//                    )
             }
+        }
+    }
+}
+
+@Composable
+fun CounterClockCanvas(currentCountDownTime: String, min: Int, sec: Int) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val canvasWidth = size.width
+//        val canvasHeight = size.height
+
+        val arcWidth = canvasWidth / 1.5f
+        val arcCenter = arcWidth / 3.5f
+        val curSec = min * 60 + sec
+        drawArc(
+            startAngle = 270f,
+            sweepAngle = curSec * -0.1f,
+            useCenter = true,
+            color = red300,
+            size = Size(width = arcWidth, arcWidth),
+            topLeft = Offset(arcCenter, arcCenter)
+        )
+
+        val lineHeight = size.minDimension / 32
+//        val halfLineHeight = lineHeight/2
+        val radius = arcWidth / 2
+
+        val zeroCoordinate = arcCenter + radius
+//        val offsetList = mutableListOf<Offset>()
+
+        val paint = android.graphics.Paint()
+        paint.textSize = 48f
+        paint.color = 0xff000000.toInt()
+        val timeList = listOf<Int>(40, 35, 30, 25, 20, 15, 10, 5, 0, 55, 50, 45)
+        val addOffsetList = listOf<Pair<Int, Int>>(
+            Pair(5, 30), Pair(-20, 45), Pair(-20, 45),
+            Pair(-40, 50), Pair(-40, 40), Pair(-55, 20), Pair(-60, 10), Pair(-20, -10), Pair(-10, -5), Pair(0, 0), Pair(0, 0), Pair(0, 20)
+        )
+
+        for (i in 1..12) {
+            val nextX = (cos(Math.toRadians(i * 30.0)) * radius).toFloat()
+            val nextY = (sin(Math.toRadians(i * 30.0)) * radius).toFloat()
+            val x = zeroCoordinate + nextX
+            val y = zeroCoordinate + nextY
+
+            var path = Path()
+            path.moveTo(zeroCoordinate, zeroCoordinate)
+            path.lineTo(x, y)
+
+            drawPath(
+                path = path,
+                color = Color.Black,
+                style = Stroke(1f)
+            )
+
+            drawIntoCanvas {
+                val pair = addOffsetList[i - 1]
+                val offsetX = x + pair.first
+                val offsetY = y + pair.second
+
+                it.nativeCanvas.drawText("${timeList[i - 1]}", offsetX, offsetY, paint)
+            }
+        }
+
+//                        drawPoints(
+//                            points = offsetList,
+//                            pointMode = PointMode.Points,
+//                            cap = StrokeCap.Round,
+//                            strokeWidth = 15f,
+//                            color = Color.Black
+//                        )
+
+        val circleCenter = arcCenter + arcWidth / 2
+        drawCircle(
+            color = Color.Black,
+            center = Offset(x = circleCenter, y = circleCenter),
+            radius = lineHeight
+        )
+
+        val textPaint = android.graphics.Paint()
+        textPaint.textSize = 64f
+        textPaint.color = 0xff000000.toInt()
+        drawIntoCanvas {
+            it.nativeCanvas.drawText(currentCountDownTime, arcCenter + radius / 1.5f, arcCenter + radius * 2 + radius / 2, textPaint)
         }
     }
 }

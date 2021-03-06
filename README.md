@@ -8,13 +8,13 @@
 ## :scroll: Description
 <!--- Describe your app in one or two sentences -->
 This is an App that counts down minutes and seconds made up with Jetpack Compose
-(It maybe useful when you plank which is a sort of exercise)
+(maybe it would be useful when you have to get to focus on something in less an hour.)
 
 ## :bulb: Motivation and Context
 <!--- Optionally point readers to interesting parts of your submission. -->
 <!--- What are you especially proud of? -->
-This is for AndroidDevChanllge,
-but I made it that would be useful for counting down seconds whenever I get plank that I usally do as an exercise.
+It's for AndroidDevChanllge.
+and I inspired by [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique)
 I checked references from [Compose pathway](https://developer.android.com/courses/pathways/compose) and [CountDownTimer class](https://developer.android.com/reference/android/os/CountDownTimer).
 
 ## :camera_flash: Screenshots

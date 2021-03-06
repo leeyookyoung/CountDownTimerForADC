@@ -31,8 +31,19 @@ class CountDownViewModel : ViewModel() {
 
     fun numberCheck(min: String, sec: String): Boolean {
         try {
-            min.toInt()
-            sec.toInt()
+            val curMin = min.toInt()
+            val curSec = sec.toInt()
+
+            if (curMin > 60) {
+                return false
+            }
+
+            if (curSec > 60) {
+                return false
+            }
+
+            countDownMin = curMin
+            countDownSec = curSec
             return true
         } catch (e: NumberFormatException) {
             return false
@@ -47,6 +58,11 @@ class CountDownViewModel : ViewModel() {
             wrongNumberExpanded = true
             buttonExpanded = false
         }
+    }
+
+    fun setWrongNumber() {
+        wrongNumberExpanded = true
+        buttonExpanded = false
     }
 
     fun onMinuteAndSecChanged(newMin: Int, newSec: Int) {
