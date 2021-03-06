@@ -14,8 +14,9 @@ This is an App that counts down minutes and seconds made up with Jetpack Compose
 <!--- Optionally point readers to interesting parts of your submission. -->
 <!--- What are you especially proud of? -->
 It's for AndroidDevChanllge.
-and I inspired by [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique)
-I checked references from [Compose pathway](https://developer.android.com/courses/pathways/compose) and [CountDownTimer class](https://developer.android.com/reference/android/os/CountDownTimer).
+And I was inspired by [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique)
+I checked references from [Compose pathway](https://developer.android.com/courses/pathways/compose)
+and [CountDownTimer class](https://developer.android.com/reference/android/os/CountDownTimer).
 
 ## :camera_flash: Screenshots
 <!-- You can add more screenshots here if you like -->
