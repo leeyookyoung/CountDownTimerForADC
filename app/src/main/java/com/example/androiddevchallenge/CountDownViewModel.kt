@@ -25,24 +25,17 @@ class CountDownViewModel : ViewModel() {
     private lateinit var countDown: CountDownTimer
     var countDownStarted by mutableStateOf(false)
     var buttonExpanded by mutableStateOf(false)
-    var wrongNumberExpanded by mutableStateOf(false)
     var countDownMin by mutableStateOf(0)
     var countDownSec by mutableStateOf(0)
 
-    fun numberCheck(min: String, sec: String): Boolean {
+    private fun numberCheck(sec: String): Boolean {
         try {
-            val curMin = min.toInt()
             val curSec = sec.toInt()
-
-            if (curMin > 60) {
-                return false
-            }
 
             if (curSec > 60) {
                 return false
             }
 
-            countDownMin = curMin
             countDownSec = curSec
             return true
         } catch (e: NumberFormatException) {
@@ -50,33 +43,27 @@ class CountDownViewModel : ViewModel() {
         }
     }
 
-    fun validateNumCheck(min: String, sec: String) {
-        if (numberCheck(min, sec)) {
-            buttonExpanded = true
-            wrongNumberExpanded = false
-        } else {
-            wrongNumberExpanded = true
-            buttonExpanded = false
-        }
+    fun setMin(min: Int) {
+        countDownMin = min
+        setButtonExpanded()
     }
 
-    fun setWrongNumber() {
-        wrongNumberExpanded = true
-        buttonExpanded = false
+    fun setSec(sec: Int) {
+        countDownSec = sec
+        setButtonExpanded()
     }
 
-    fun onMinuteAndSecChanged(newMin: Int, newSec: Int) {
-        countDownMin = newMin
-        countDownSec = newSec + 1
+    private fun setButtonExpanded() {
+        buttonExpanded = countDownMin > 0 || countDownSec > 0
     }
 
     fun startCountDown() {
         countDownStarted = true
+        countDownSec += 1
 
         var totalSeconds = (countDownMin * 60000)
-        if (totalSeconds != null) {
-            totalSeconds += (countDownSec * 1000)
-        }
+        totalSeconds += (countDownSec * 1000)
+
         countDown = object : CountDownTimer(totalSeconds!!.toLong(), 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 if (countDownSec == 0 && countDownMin > 0) {

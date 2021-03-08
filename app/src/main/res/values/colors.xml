@@ -17,4 +17,10 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="red_100">#FFffcdd2</color>
+    <color name="red_200">#FFef9a9a</color>
+    <color name="red_300">#FFe57373</color>
+    <color name="red_500">#FFf44336</color>
+    <color name="red_700">#FFd32f2f</color>
 </resources>

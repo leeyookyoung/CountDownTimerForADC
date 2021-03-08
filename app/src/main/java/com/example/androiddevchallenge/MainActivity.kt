@@ -22,19 +22,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
+import androidx.compose.material.Divider
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +52,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,10 +83,8 @@ fun MyApp(countDownViewModel: CountDownViewModel) {
         countDownSec = countDownViewModel.countDownSec,
         countDownStarted = countDownViewModel.countDownStarted,
         buttonExpanded = countDownViewModel.buttonExpanded,
-        wrongNumberExpanded = countDownViewModel.wrongNumberExpanded,
-        setWrongNumber = countDownViewModel::setWrongNumber,
-        validationCheck = countDownViewModel::validateNumCheck,
-        onMinuteAndSecChanged = countDownViewModel::onMinuteAndSecChanged,
+        setMin = countDownViewModel::setMin,
+        setSec = countDownViewModel::setSec,
         startCountDown = countDownViewModel::startCountDown,
         stopCountDown = countDownViewModel::stopCountDown
     )
@@ -96,23 +97,19 @@ fun CountDownScreen(
     countDownSec: Int,
     countDownStarted: Boolean,
     buttonExpanded: Boolean,
-    wrongNumberExpanded: Boolean,
-    setWrongNumber: () -> Unit,
-    validationCheck: (String, String) -> Unit,
-    onMinuteAndSecChanged: (Int, Int) -> Unit,
+    setMin: (Int) -> Unit,
+    setSec: (Int) -> Unit,
     startCountDown: () -> Unit,
     stopCountDown: () -> Unit
 
 ) {
-    var countDownMinStr = remember { mutableStateOf("0") }
-    var countDownSecStr = remember { mutableStateOf("0") }
-    fun check(str1: String, str2: String) {
-        if (!str1.isEmpty()) {
-            validationCheck(str1, str2)
-        } else {
-            setWrongNumber()
-        }
-    }
+    val minDropDownMenuExpanded = remember { mutableStateOf(false) }
+    val secDropDownMenuExpanded = remember { mutableStateOf(false) }
+    val inputSecEnabled = remember { mutableStateOf(true) }
+    val items = (0..60 step 5).toList()
+    val selectedMinIndex = remember { mutableStateOf(0) }
+    val selectedSecIndex = remember { mutableStateOf(0) }
+
     Surface(color = MaterialTheme.colors.background) {
         Column(
             modifier = Modifier
@@ -122,88 +119,151 @@ fun CountDownScreen(
         ) {
             Text(
                 text = "CountDown Timer!",
-                fontSize = 32.sp
+                fontSize = 16.sp
             )
             Spacer(modifier = Modifier.height(16.dp))
             AnimatedVisibility(!countDownStarted) {
                 Row {
-                    OutlinedTextField(
-                        value = countDownMinStr.value,
-                        onValueChange = {
-                            countDownMinStr.value = it
-                            check(it, countDownSecStr.value)
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text("Input Minutes") },
-                        singleLine = true,
-                        maxLines = 1,
-                        modifier = Modifier.weight(0.5f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    OutlinedTextField(
-                        value = countDownSecStr.value,
-                        onValueChange = {
-                            countDownSecStr.value = it
-                            check(countDownMinStr.value, it)
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text("Input Seconds") },
-                        singleLine = true,
-                        maxLines = 1,
-                        modifier = Modifier.weight(0.5f)
-                    )
+                    Spacer(modifier = Modifier.weight(0.3f))
+                    Box(
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .clickable(onClick = { minDropDownMenuExpanded.value = true })
+                            .background(MaterialTheme.colors.primary)
+                    ) {
+                        Text(
+                            text = (0..60).toList()[selectedMinIndex.value].toString(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Center)
+                        )
+                        DropdownMenu(
+                            expanded = minDropDownMenuExpanded.value,
+                            onDismissRequest = { minDropDownMenuExpanded.value = false },
+                            modifier = Modifier.background(MaterialTheme.colors.primaryVariant)
+                        ) {
+                            for (i in 0..60) {
+                                DropdownMenuItem(
+                                    onClick = {
+                                        selectedMinIndex.value = i
+                                        minDropDownMenuExpanded.value = false
+                                        setMin(i)
+                                        // 60 minutes is the last limited value for countdown time
+                                        if (i == 60) {
+//                                        setSec(0)
+                                            selectedSecIndex.value = 0
+                                            inputSecEnabled.value = false
+                                        } else {
+                                            inputSecEnabled.value = true
+                                        }
+                                    }
+                                ) {
+                                    DropDownMenuTextAndDivider(i)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .weight(0.2f)
+                            .clickable(
+                                onClick = {
+                                    if (inputSecEnabled.value) {
+                                        secDropDownMenuExpanded.value = true
+                                    }
+                                }
+                            )
+                            .background(MaterialTheme.colors.primary)
+                    ) {
+                        Text(
+                            text = (0..60).toList()[selectedSecIndex.value].toString(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Center)
+                        )
+                        DropdownMenu(
+                            expanded = secDropDownMenuExpanded.value && inputSecEnabled.value,
+                            onDismissRequest = { secDropDownMenuExpanded.value = false },
+                            modifier = Modifier.background(MaterialTheme.colors.primaryVariant)
+                        ) {
+                            for (i in 0..60) {
+                                DropdownMenuItem(
+                                    onClick = {
+                                        selectedSecIndex.value = i
+                                        secDropDownMenuExpanded.value = false
+                                        setSec(i)
+                                    }
+                                ) {
+                                    DropDownMenuTextAndDivider(i)
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.weight(0.3f))
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
 
             AnimatedVisibility(buttonExpanded) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Button(
                         onClick = {
                             if (!countDownStarted) {
-                                onMinuteAndSecChanged(
-                                    countDownMinStr.value.toInt(),
-                                    countDownSecStr.value.toInt()
-                                )
                                 startCountDown()
                             } else {
                                 stopCountDown()
+                                selectedMinIndex.value = countDownMin
+                                selectedSecIndex.value = countDownSec
                             }
                         }
                     ) {
-                        Text("${if (!countDownStarted) "Start" else "Stop"}")
+                        Text(if (!countDownStarted) "Start" else "Stop")
                     }
                 }
             }
-            AnimatedVisibility(wrongNumberExpanded) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Wrong Minute or Second\nPlease input 60 below and only numbers",
-                        color = Color.Red,
-                        fontSize = 16.sp,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(50.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(),
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CounterClockCanvas(getCurrentCountDownSec(countDownMin, countDownSec), countDownMin, countDownSec)
-//                    Text(
-//                        text = "${getCurrentCountDownSec(countDownMin, countDownSec)}",
-//                        fontSize = 32.sp,
-//                    )
+                Text(
+                    text = getCurrentCountDownSec(countDownMin, countDownSec),
+                    fontSize = 32.sp
+                )
+                CounterClockCanvas(countDownMin, countDownSec)
             }
         }
     }
 }
 
 @Composable
-fun CounterClockCanvas(currentCountDownTime: String, min: Int, sec: Int) {
+fun DropDownMenuTextAndDivider(i: Int) {
+    Column {
+        Text(
+            text = i.toString(),
+            fontSize = 10.sp
+        )
+        if (i != 0 && i % 10 == 0) {
+            Divider(
+                color = MaterialTheme.colors.secondary,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+fun CounterClockCanvas(min: Int, sec: Int) {
     Canvas(modifier = Modifier.fillMaxSize()) {
         val canvasWidth = size.width
 //        val canvasHeight = size.height
@@ -276,12 +336,12 @@ fun CounterClockCanvas(currentCountDownTime: String, min: Int, sec: Int) {
             radius = lineHeight
         )
 
-        val textPaint = android.graphics.Paint()
-        textPaint.textSize = 64f
-        textPaint.color = 0xff000000.toInt()
-        drawIntoCanvas {
-            it.nativeCanvas.drawText(currentCountDownTime, arcCenter + radius / 1.5f, arcCenter + radius * 2 + radius / 2, textPaint)
-        }
+//        val textPaint = android.graphics.Paint()
+//        textPaint.textSize = 64f
+//        textPaint.color = 0xff000000.toInt()
+//        drawIntoCanvas {
+//            it.nativeCanvas.drawText(currentCountDownTime, arcCenter + radius / 1.5f, arcCenter + radius * 2 + radius / 2, textPaint)
+//        }
     }
 }
 
