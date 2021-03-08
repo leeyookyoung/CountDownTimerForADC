@@ -8,20 +8,20 @@
 ## :scroll: Description
 <!--- Describe your app in one or two sentences -->
 This is an App that counts down minutes and seconds made up with Jetpack Compose
-#(maybe it would be useful when you have to get to focus on something in less an hour.)
+(maybe it would be useful when you have to get to focus on something in less an hour.)
 
 ## :bulb: Motivation and Context
 <!--- Optionally point readers to interesting parts of your submission. -->
 <!--- What are you especially proud of? -->
 It's for AndroidDevChanllge.
-#And I was inspired by [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique)
-#I checked references from [Compose pathway](https://developer.android.com/courses/pathways/compose)
-#and [CountDownTimer class](https://developer.android.com/reference/android/os/CountDownTimer).
+And I was inspired by [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique)
+I checked references from [Compose pathway](https://developer.android.com/courses/pathways/compose)
+and [CountDownTimer class](https://developer.android.com/reference/android/os/CountDownTimer).
 
 ## :camera_flash: Screenshots
 <!-- You can add more screenshots here if you like -->
 <img src="/results/screenshot_1.png" width="260">&emsp;<img src="/results/screenshot_2.png" width="260">
-#<img src="/results/screenshot_3.png" width="260">&emsp;<img src="/results/screenshot_4.png" width="260">
+<img src="/results/screenshot_3.png" width="260">&emsp;<img src="/results/screenshot_4.png" width="260">
 
 ## License
 ```
