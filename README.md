@@ -16,12 +16,13 @@ This is an App that counts down minutes and seconds made up with Jetpack Compose
 It's for AndroidDevChanllge.
 And I was inspired by [Pomodoro Technique](https://en.wikipedia.org/wiki/Pomodoro_Technique)
 I checked references from [Compose pathway](https://developer.android.com/courses/pathways/compose)
-and [CountDownTimer class](https://developer.android.com/reference/android/os/CountDownTimer).
+and [CountDownTimer class](https://developer.android.com/reference/android/os/CountDownTimer)
+and [Notification Kotlin course codelabs Course](https://developer.android.com/codelabs/advanced-android-kotlin-training-notifications)
 
 ## :camera_flash: Screenshots
 <!-- You can add more screenshots here if you like -->
 <img src="/results/screenshot_1.png" width="260">&emsp;<img src="/results/screenshot_2.png" width="260">
-<img src="/results/screenshot_3.png" width="260">&emsp;<img src="/results/screenshot_4.png" width="260">
+<img src="/results/screenshot_3.png" width="260">
 
 ## License
 ```

@@ -9,5 +9,10 @@
       or implied. See the License for the specific language governing permissions and limitations under
       the License.
       -->
-    <string name="app_name">AndroidDevChallenge</string>
+    <string name="app_name">CountDown Timer</string>
+    <string name="notification_title">CountDown Timer</string>
+    <string name="countdown_timer_notification_channel_id" translatable="false">countdown_timer_channel</string>
+    <string name="countdown_timer_notification_channel_name" translatable="true">CountDown_Timer</string>
+    <string name="time_is_up">Time is up!</string>
+
 </resources>

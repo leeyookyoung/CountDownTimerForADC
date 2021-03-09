@@ -15,72 +15,159 @@
  */
 package com.example.androiddevchallenge
 
+import android.app.AlarmManager
+import android.app.Application
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import android.os.CountDownTimer
+import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.core.app.AlarmManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.androiddevchallenge.notification.receiver.AlarmReceiver
+import com.example.androiddevchallenge.util.cancelNotifications
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class CountDownViewModel : ViewModel() {
+class CountDownViewModel(private val app: Application) : AndroidViewModel(app) {
+
+    private val REQUEST_CODE = 0
+    private val TRIGGER_TIME = "TRIGGER_AT"
+
+    private val minute: Long = 60_000L
+    private val second: Long = 1_000L
+
     private lateinit var countDown: CountDownTimer
     var countDownStarted by mutableStateOf(false)
     var buttonExpanded by mutableStateOf(false)
-    var countDownMin by mutableStateOf(0)
-    var countDownSec by mutableStateOf(0)
+    var elapsedTime by mutableStateOf(0L)
 
-    private fun numberCheck(sec: String): Boolean {
-        try {
-            val curSec = sec.toInt()
+    private var _min: Int = 0
+    private var _sec: Int = 0
 
-            if (curSec > 60) {
-                return false
+    private val notifyPendingIntent: PendingIntent
+
+    private val alarmManager = app.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    private var prefs =
+        app.getSharedPreferences("com.example.androiddevchallenge", Context.MODE_PRIVATE)
+    private val notifyIntent = Intent(app, AlarmReceiver::class.java)
+
+    init {
+        val isAlarmOn = PendingIntent.getBroadcast(
+            getApplication(),
+            REQUEST_CODE,
+            notifyIntent,
+            PendingIntent.FLAG_NO_CREATE
+        ) != null
+
+        notifyPendingIntent = PendingIntent.getBroadcast(
+            getApplication(),
+            REQUEST_CODE,
+            notifyIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        if (isAlarmOn) {
+            viewModelScope.launch {
+                val triggerTime = loadTime()
+                if (triggerTime - SystemClock.elapsedRealtime() > 0) {
+                    countDownStarted = true
+                    buttonExpanded = true
+                    createCountDownTimer()
+                }
             }
-
-            countDownSec = curSec
-            return true
-        } catch (e: NumberFormatException) {
-            return false
         }
     }
 
     fun setMin(min: Int) {
-        countDownMin = min
+        _min = min
+        resetElapsedTime()
         setButtonExpanded()
     }
 
     fun setSec(sec: Int) {
-        countDownSec = sec
+        _sec = sec
+        resetElapsedTime()
         setButtonExpanded()
     }
 
+    private fun resetElapsedTime() {
+        elapsedTime = _min * minute + _sec * second
+    }
+
     private fun setButtonExpanded() {
-        buttonExpanded = countDownMin > 0 || countDownSec > 0
+        buttonExpanded = _sec > 0 || _min > 0
     }
 
     fun startCountDown() {
         countDownStarted = true
-        countDownSec += 1
 
-        var totalSeconds = (countDownMin * 60000)
-        totalSeconds += (countDownSec * 1000)
+        // set notification cancel and call alarm
+        val notificationManager =
+            ContextCompat.getSystemService(
+                app,
+                NotificationManager::class.java
+            ) as NotificationManager
+        notificationManager.cancelNotifications()
 
-        countDown = object : CountDownTimer(totalSeconds!!.toLong(), 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                if (countDownSec == 0 && countDownMin > 0) {
-                    countDownMin--
-                    countDownSec = 60
-                }
+        val triggerTime = SystemClock.elapsedRealtime() + elapsedTime
+        AlarmManagerCompat.setExactAndAllowWhileIdle(
+            alarmManager,
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            triggerTime,
+            notifyPendingIntent
+        )
 
-                countDownSec--
-            }
-            override fun onFinish() {
-                countDownStarted = false
-            }
+        viewModelScope.launch {
+            saveTime(triggerTime)
         }
-        countDown.start()
+        createCountDownTimer()
     }
+    private fun createCountDownTimer() {
+        viewModelScope.launch {
+            val triggerTime = loadTime()
+            countDown = object : CountDownTimer(triggerTime, second) {
+                override fun onTick(millisUntilFinished: Long) {
+                    elapsedTime = triggerTime - SystemClock.elapsedRealtime()
+                    _min = (elapsedTime / minute).toInt()
+                    _sec = ((elapsedTime % minute) / second).toInt()
+                    if (elapsedTime <= 0) {
+                        cancelCountDown()
+                    }
+                }
+                override fun onFinish() {
+                    countDownStarted = false
+                }
+            }
+            countDown.start()
+        }
+    }
+
     fun stopCountDown() {
+        alarmManager.cancel(notifyPendingIntent)
+        cancelCountDown()
+    }
+
+    private fun cancelCountDown() {
+        setButtonExpanded()
         countDown.onFinish()
         countDown.cancel()
     }
+
+    private suspend fun saveTime(triggerTime: Long) =
+        withContext(Dispatchers.IO) {
+            prefs.edit().putLong(TRIGGER_TIME, triggerTime).apply()
+        }
+
+    private suspend fun loadTime(): Long =
+        withContext(Dispatchers.IO) {
+            prefs.getLong(TRIGGER_TIME, 0)
+        }
 }
